@@ -25,7 +25,26 @@ public class Main {
         if (repetitions <= 0) {
             throw new IllegalArgumentException("Repetitions must be > 0, got " + repetitions);
         }
+        if (d > 5000) {
+            System.err.println("WARNING: d is extremely large, computation may be unstable: d = " + d);
+        }
+        if (n > 10_000_000) {
+            System.err.println("WARNING: n is very large, memory/time may be huge: n = " + n);
+        }
     }
+
+    private static void checkFinite(double value, String name, String context) {
+        if (!Double.isFinite(value)) {
+            System.err.println("ERROR: " + name + " is not finite (" + value + ") in " + context);
+        }
+    }
+
+    private static void warnIfNegative(double value, String name, String context) {
+        if (value < 0) {
+            System.err.println("WARNING: " + name + " is negative (" + value + ") in " + context);
+        }
+    }
+
 
     static class Sphere {
         int d;
@@ -51,12 +70,12 @@ public class Main {
     static class DomainSphere extends Domain {
         int d;
         double r;
-        RandomLogger rnd;
+        Random rnd;
 
         @Override
-        public Double[] getElement() throws IOException {
-            double u[] = new double[d];
-            Double x[] = new Double[d];
+        public Double[] getElement() {
+            double[] u = new double[d];
+            Double[] x = new Double[d];
             double norm = 0.0;
             double c;
             int i;
@@ -73,7 +92,7 @@ public class Main {
             return x;
         }
 
-        public DomainSphere(int d, double r, RandomLogger rnd) {
+        public DomainSphere(int d, double r, Random rnd) {
             this.d = d;
             this.r = r;
             this.rnd = rnd;
@@ -86,7 +105,7 @@ public class Main {
 
         @Override
         public Double getValue(Object obj_x) {
-            Double x[] = (Double[]) obj_x;
+            Double[] x = (Double[]) obj_x;
             int i;
             double result = r * r;
             for (i = 0; i < d; i++) {
@@ -125,6 +144,10 @@ public class Main {
         return 8.0 * Math.pow(sJ.getVolume(), 2) / ((j + 2.0) * Math.pow(sJ1.getVolume(), 2)) - 1;
     }
 
+    static long generateSeed(){
+        return System.nanoTime();
+    }
+
     static void printTable() {
         String header = String.format(
                 "%-3s | %-22s | %-20s | %-20s | %-20s",
@@ -152,27 +175,49 @@ public class Main {
      * @throws java.io.FileNotFoundException
      */
     public static void main(String[] args) throws IOException {
-        System.out.print("Režim [1=GENERATE random, 2=REPLAY from log]: ");
-        Scanner sc = new Scanner(System.in);
-        int modeChoice = sc.nextInt();
-        sc.nextLine();
-        RandomLogger.Mode rmMode =
-                (modeChoice == 2) ? RandomLogger.Mode.REPLAY : RandomLogger.Mode.RANDOM;
 
-        if (args.length < 3) {
-            System.err.println("Usage: java mc.Main <d> <n> <repetitions>");
+
+        if (args.length < 4 || args.length > 5) {
+            System.err.println(
+                    "Usage: java mc.Main <method> <d> <n> <repetitions> <seed>\n" +
+                            "method must be from {rOpt, opt, uni,dsel}");
             return;
         }
 
+
         double r = 1.0;
         int i, j, k, l;
-        int d;
-        int n;
-        int repetitions;
+        String method = args[0];
+        int d, n, repetitions;
+        long seed;
 
-        d = Integer.parseInt(args[0]);
-        n = Integer.parseInt(args[1]);
-        repetitions = Integer.parseInt(args[2]);
+        try {
+            d = Integer.parseInt(args[1]);
+            n = Integer.parseInt(args[2]);
+            repetitions = Integer.parseInt(args[3]);
+        } catch (NumberFormatException e) {
+            System.err.println("ERROR: d, n, repetitions must be integers.");
+            return;
+        }
+
+        if (!method.equals("rOpt") && !method.equals("opt") && !method.equals("uni") && !method.equals("dsel")) {
+            System.err.println("ERROR: method must be one of {rOpt, opt, uni}");
+            return;
+        }
+
+        if (args.length == 5) {
+            try {
+                seed = Long.parseLong(args[4]);
+            } catch (NumberFormatException e) {
+                System.err.println("ERROR: seed must be a long integer.");
+                return;
+            }
+            System.out.println("Using provided seed: " + seed);
+        } else {
+            seed = generateSeed();
+            System.out.println("No seed provided, generated seed: " + seed);
+        }
+        Random rnd = new Random(seed);
 
         try {
             validateInput(d, n, repetitions);
@@ -181,125 +226,194 @@ public class Main {
             return;
         }
 
-        PrintStream optOut = new PrintStream("opt_" + d + "_" + n + "_" + repetitions + ".txt");
-        PrintStream dselOut = new PrintStream("dsel_" + d + "_" + n + "_" + repetitions + ".txt");
-        PrintStream uniOut = new PrintStream("uni_" + d + "_" + n + "_" + repetitions + ".txt");
+        System.out.println("Starting simulation with d=" + d + ", n=" + n + ", repetitions=" + repetitions);
 
-        System.out.print("Name of file you want to read from/ generate randomness: ");
-        String rngLogFile= sc.nextLine();
-
-        //String rngLogFile = "rng_" + d + "_" + n + "_" + repetitions + ".txt";
-        System.out.println("Random log file: " + rngLogFile);
-
-        RandomLogger rm = new RandomLogger(rmMode, rngLogFile);
         Integrator[] nBallIntegrator = new Integrator[d - 1];
         Stats stats;
         Stats nball_stats;
         Stats[] dsel_stats = new Stats[d - 1];
         int argmax;
         double max;
-
         printTable();
 
         for (i = 0; i < d - 1; i++) {
             dsel_stats[i] = new Stats();
         }
 
-        optOut.println("Repetition\tExactVolume\tEstimate\tMeanEstimate\tVariance\tCVar2");
-        nball_stats = new Stats();
-        for (k = 0; k < repetitions; k++) {
-            for (i = 0; i < d - 1; i++) {
-                nBallIntegrator[i] = new Integrator(
-                        new DomainSphere(i + 1, r, rm),
-                        new FunctionSphere(i + 1, r),
-                        new PdfSphere(i + 1, r)
-                );
-            }
-            for (int step = 0; step < n * d; step++) {
-                int chosen = rm.nextInt(d - 1);
-                try {
-                    nBallIntegrator[chosen].update();
-                    dsel_stats[chosen].update(1.0);
-                } catch (IOException e) {
-                    System.err.println("ERROR at step " + step + ": " + e.getMessage());
-                    throw e;
+        if(method.equals("rOpt")) {
+            PrintStream randOptOut = new PrintStream(("rOpt_" + d + "_" + n + "_" + repetitions + ".txt"));
+            randOptOut.println("Repetition\tExactVolume\tEstimate\tMeanEstimate\tVariance\tCVar2\tSEED="+seed);
+            nball_stats = new Stats();
+            for (k = 0; k < repetitions; k++) {
+                for (i = 0; i < d - 1; i++) {
+                    nBallIntegrator[i] = new Integrator(
+                            new DomainSphere(i + 1, r,rnd),
+                            new FunctionSphere(i + 1, r),
+                            new PdfSphere(i + 1, r)
+                    );
                 }
-            }
+                for (i = 0; i < n * d; i++) {
+                    argmax = 0;
+                    double[] weights = new double[d - 1];
+                    double sumWeights = 0.0;
+                    boolean warmup = false;
+                    for (j = 0; j < d - 1; j++) {
+                        stats = nBallIntegrator[j].getStats();
+                        if (stats.getCount() < n / 10) {
+                            argmax = j;
+                            warmup = true;
+                            break;
+                        }
+                    }
 
-            double volume = 1.0;
-            for (l = 0; l < d - 1; l++) {
-                volume *= nBallIntegrator[l].getStats().getAvg();
-            }
+                    if (!warmup) {
+                        for (j = 0; j < d - 1; j++) {
+                            stats = nBallIntegrator[j].getStats();
+                            double w = stats.getCVar2() / (stats.getCount() * (stats.getCount() + 1));
+                            weights[j] = Math.max(w, 0.0);
+                            sumWeights += weights[j];
+                        }
 
-            nball_stats.update(2.0 * volume);
-            optOut.println(k + "\t" + new Sphere(d, r).getVolume() + "\t" + nball_stats.getLast() + "\t" + nball_stats.getAvg() + "\t" + nball_stats.getVar() + "\t" + nball_stats.getCVar2());
-        }
+                        if (sumWeights == 0.0) {
+                            argmax = rnd.nextInt() * (d - 1);
+                        } else {
+                            double rrand = rnd.nextDouble() * sumWeights;
+                            double cumulative = 0.0;
+                            for (j = 0; j < d - 1; j++) {
+                                cumulative += weights[j];
+                                if (rrand <= cumulative) {
+                                    argmax = j;
+                                    break;
+                                }
+                            }
+                        }
+                    }
 
-        dselOut.println("Dimension\tEstimatedCVar2\tExactCVar2\tActualUpdateShare\tEstimatedFraction\tExactFraction\tSampleCount");
-        double cvar2sum = 0.0;
-        double exact_cvarsum = 0.0;
-        for (i = 0; i < d - 1; i++) {
-            double estCVar2 = nBallIntegrator[i].getStats().getCVar2();
-            cvar2sum += Math.sqrt(Math.max(estCVar2, 0.0));
-            exact_cvarsum += Math.sqrt(Math.max(getCVar2(i + 1), 0.0));
-        }
-        double sum = 0.0;
-        for (i = 0; i < d - 1; i++) {
-            sum += d * n * Math.sqrt(Math.max(nBallIntegrator[i].getStats().getCVar2(), 0.0)) / cvar2sum;
-        }
+                    nBallIntegrator[argmax].update();
+                    dsel_stats[argmax].update(1.0);
+                }
 
-        for (i = 0; i < d - 1; i++) {
-            double estCvar2 = nBallIntegrator[i].getStats().getCVar2();
-            double exactCvar2 = getCVar2(i + 1);
+                double volume = 1.0;
+                for (l = 0; l < d - 1; l++) {
+                    volume *= nBallIntegrator[l].getStats().getAvg();
+                }
 
-            dselOut.println(i + 1 + "\t" +
-                    estCvar2 + "\t" +
-                    exactCvar2 + "\t" +
-                    (double) dsel_stats[i].getCount() / (d * n) + "\t" +
-                    d * n * Math.sqrt(Math.max(estCvar2, 0.0)) / cvar2sum / sum + "\t" +
-                    Math.sqrt(Math.max(exactCvar2, 0.0)) / exact_cvarsum + "\t" +
-                    dsel_stats[i].getCount());
-        }
+                nball_stats.update(2.0 * volume);
 
-        uniOut.println("Repetition\tExactVolume\tEstimate\tMeanEstimate\tVariance\tCVar2");
-        nball_stats = new Stats();
-        for (k = 0; k < repetitions; k++) {
-            for (i = 0; i < d - 1; i++) {
-                nBallIntegrator[i] = new Integrator(
-                        new DomainSphere(i + 1, r, rm),
-                        new FunctionSphere(i + 1, r),
-                        new PdfSphere(i + 1, r)
+                randOptOut.println(
+                        k + "\t"
+                                + new Sphere(d, r).getVolume() + "\t"
+                                + nball_stats.getLast() + "\t"
+                                + nball_stats.getAvg() + "\t"
+                                + nball_stats.getVar() + "\t"
+                                + nball_stats.getCVar2()
                 );
             }
+            randOptOut.close();
+        }
+        if(method.equals("opt")) {
+            PrintStream optOut = new PrintStream(("opt_" + d + "_" + n + "_" + repetitions + ".txt"));
+            optOut.println("Repetition\tExactVolume\tEstimate\tMeanEstimate\tVariance\tCVar2\tSEED=" + seed);
+            nball_stats = new Stats();
+            for (k = 0; k < repetitions; k++) {
+                for (i = 0; i < d - 1; i++) {
+                    nBallIntegrator[i] = new Integrator(new DomainSphere(i + 1, r, rnd), new FunctionSphere(i + 1, r), new PdfSphere(i + 1, r));
+                }
 
-            for (i = 0; i < n; i++) {
-                for (j = 0; j < d - 1; j++) {
-                    try {
+                for (i = 0; i < n * d; i++) {
+                    argmax = 0;
+                    max = 0.0;
+                    for (j = 0; j < d - 1; j++) {
+                        stats = nBallIntegrator[j].getStats();
+                        if (stats.getCount() < n / 10) { /* no reliable Cvar2 yet */
+                            argmax = j;
+                            break;
+                        }
+                        if (stats.getCVar2() / (stats.getCount() * (stats.getCount() + 1)) > max) {
+                            max = stats.getCVar2() / (stats.getCount() * (stats.getCount() + 1));
+                            argmax = j;
+                        }
+                    }
+                    nBallIntegrator[argmax].update();
+                    dsel_stats[argmax].update(1.0);
+                }
+                double volume = 1.0;
+                for (l = 0; l < d - 1; l++) {
+                    volume *= nBallIntegrator[l].getStats().getAvg();
+                }
+                nball_stats.update(2.0 * volume);
+                optOut.println(k + "\t" + new Sphere(d, r).getVolume() + "\t" + nball_stats.getLast() + "\t" + nball_stats.getAvg() + "\t" + nball_stats.getVar() + "\t" + nball_stats.getCVar2());
+            }
+            optOut.close();
+        }
+
+        if (method.equals("dsel")) {
+            PrintStream dselOut = new PrintStream(("dsel_" + d + "_" + n + "_" + repetitions + ".txt"));
+            dselOut.println("Dimension\tEstimatedCVar2\tExactCVar2\tActualUpdateShare\tEstimatedFraction\tExactFraction\tSampleCount\tSEED=" + seed);
+            double cvar2sum = 0.0;
+            double exact_cvarsum = 0.0;
+            for (i = 0; i < d - 1; i++) {
+                double estCVar2 = nBallIntegrator[i].getStats().getCVar2();
+                cvar2sum += Math.sqrt(Math.max(estCVar2, 0.0));
+                exact_cvarsum += Math.sqrt(Math.max(getCVar2(i + 1), 0.0));
+            }
+            double sum = 0.0;
+            for (i = 0; i < d - 1; i++) {
+                sum += d * n * Math.sqrt(Math.max(nBallIntegrator[i].getStats().getCVar2(), 0.0)) / cvar2sum;
+            }
+
+            for (i = 0; i < d - 1; i++) {
+                double estCvar2 = nBallIntegrator[i].getStats().getCVar2();
+                double exactCvar2 = getCVar2(i + 1);
+
+                warnIfNegative(estCvar2, "EstimatedCVar2 (dsel)", "dim " + (i + 1));
+                warnIfNegative(exactCvar2, "ExactCVar2 (dsel)", "dim " + (i + 1));
+
+                dselOut.println(i + 1 + "\t" +
+                        estCvar2 + "\t" +
+                        exactCvar2 + "\t" +
+                        (double) dsel_stats[i].getCount() / (d * n) + "\t" +
+                        d * n * Math.sqrt(Math.max(estCvar2, 0.0)) / cvar2sum / sum + "\t" +
+                        Math.sqrt(Math.max(exactCvar2, 0.0)) / exact_cvarsum + "\t" +
+                        dsel_stats[i].getCount());
+            }
+            dselOut.close();
+        }
+
+        if(method.equals("uni")) {
+            PrintStream uniOut = new PrintStream(("uni_" + d + "_" + n + "_" + repetitions + ".txt"));
+            uniOut.println("Repetition\tExactVolume\tEstimate\tMeanEstimate\tVariance\tCVar2\tSEED=" + seed);
+            nball_stats = new Stats();
+            for (k = 0; k < repetitions; k++) {
+                for (i = 0; i < d - 1; i++) {
+                    nBallIntegrator[i] = new Integrator(new DomainSphere(i + 1, r, rnd), new FunctionSphere(i + 1, r), new PdfSphere(i + 1, r));
+                }
+                for (i = 0; i < n; i++) {
+                    for (j = 0; j < d - 1; j++) {
                         nBallIntegrator[j].update();
-                    } catch (IOException e) {
-                        System.err.println("ERROR at iteration " + i + ", dimension " + j + ": " + e.getMessage());
-                        throw e;
                     }
                 }
+                double volume = 1.0;
+                for (l = 0; l < d - 1; l++) {
+                    volume *= nBallIntegrator[l].getStats().getAvg();
+                }
+
+                checkFinite(volume, "volume (uniform)", "repetition " + k);
+                warnIfNegative(volume, "volume (uniform)", "repetition " + k);
+
+                nball_stats.update(2 * volume);
+
+                checkFinite(nball_stats.getLast(), "last estimate (uniform)", "repetition " + k);
+                checkFinite(nball_stats.getAvg(), "mean estimate (uniform)", "repetition " + k);
+                warnIfNegative(nball_stats.getVar(), "variance (uniform)", "repetition " + k);
+                warnIfNegative(nball_stats.getCVar2(), "CVar2 (uniform)", "repetition " + k);
+
+                uniOut.println(k + "\t" + new Sphere(d, r).getVolume() + "\t" + nball_stats.getLast() + "\t" + nball_stats.getAvg() + "\t" + nball_stats.getVar() + "\t" + nball_stats.getCVar2());
             }
-
-            double volume = 1.0;
-            for (l = 0; l < d - 1; l++) {
-                volume *= nBallIntegrator[l].getStats().getAvg();
-            }
-
-            nball_stats.update(2 * volume);
-
-            uniOut.println(k + "\t" + new Sphere(d, r).getVolume() + "\t" + nball_stats.getLast() + "\t" + nball_stats.getAvg() + "\t" + nball_stats.getVar() + "\t" + nball_stats.getCVar2());
+            uniOut.close();
         }
 
-        rm.close();
-
-        optOut.close();
-        dselOut.close();
-        uniOut.close();
 
         System.out.println("Simulation finished. Results written to files");
     }
-
 }
