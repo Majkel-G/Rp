@@ -200,8 +200,8 @@ public class Main {
             return;
         }
 
-        if (!method.equals("rOpt") && !method.equals("opt") && !method.equals("uni") && !method.equals("dsel")) {
-            System.err.println("ERROR: method must be one of {rOpt, opt, uni}");
+        if (!method.equals("rOpt") && !method.equals("opt") && !method.equals("uni") && !method.equals("dsel") && !method.equals("all")) {
+            System.err.println("ERROR: method must be one of {rOpt, opt, uni, all}");
             return;
         }
 
@@ -240,26 +240,42 @@ public class Main {
             dsel_stats[i] = new Stats();
         }
 
-        if(method.equals("rOpt")) {
+        Stats nball_stats2;
+        if(method.equals("rOpt") || method.equals("all")) {
+
+            double exact = new Sphere(d, r).getVolume();
+            PrintStream logOut = new PrintStream("rOpt_detailed_" + d + "_" + n +  ".txt");
+            logOut.println(
+                    "UpdateID\tRepetition\tSelectedDimension\tDimensionUpdateCount\tGlobalDimensionUpdateCount\t" +
+                            "LocalLastValue\tLocalMean\tLocalStdDev\tLocalVariance\tLocalCVar2\tExactCVar2\t" +
+                            "GlobalVolumeEstimate\tProductMeanEstimate\tProductVariance\tProductCVar2\t" +
+                            "EstimatedFraction\tExactFraction\t" +
+                            "ExactVolume\tSeed"
+            );
+            long globalUpdateID = 0;
+
             PrintStream randOptOut = new PrintStream(("rOpt_" + d + "_" + n + "_" + repetitions + ".txt"));
-            randOptOut.println("Repetition\tExactVolume\tEstimate\tMeanEstimate\tVariance\tCVar2\tSEED="+seed);
+            randOptOut.println("Repetition\tExactVolume\tEstimate\tMeanEstimate\tVariance\tCVar2\tSEED=" + seed);
             nball_stats = new Stats();
+            long[] counts= new long[d-1];
             for (k = 0; k < repetitions; k++) {
+                nball_stats2=new Stats();
                 for (i = 0; i < d - 1; i++) {
                     nBallIntegrator[i] = new Integrator(
-                            new DomainSphere(i + 1, r,rnd),
+                            new DomainSphere(i + 1, r, rnd),
                             new FunctionSphere(i + 1, r),
                             new PdfSphere(i + 1, r)
                     );
                 }
+                double[] weights = new double[d - 1];
+
                 for (i = 0; i < n * d; i++) {
-                    argmax = 0;
-                    double[] weights = new double[d - 1];
-                    double sumWeights = 0.0;
+
                     boolean warmup = false;
+                    argmax = 0;
                     for (j = 0; j < d - 1; j++) {
-                        stats = nBallIntegrator[j].getStats();
-                        if (stats.getCount() < n / 10) {
+                        Stats s = nBallIntegrator[j].getStats();
+                        if (s.getCount() < 2) {
                             argmax = j;
                             warmup = true;
                             break;
@@ -267,18 +283,27 @@ public class Main {
                     }
 
                     if (!warmup) {
+                        double sumWeights = 0.0;
+
                         for (j = 0; j < d - 1; j++) {
-                            stats = nBallIntegrator[j].getStats();
-                            double w = stats.getCVar2() / (stats.getCount() * (stats.getCount() + 1));
-                            weights[j] = Math.max(w, 0.0);
-                            sumWeights += weights[j];
+                            Stats s = nBallIntegrator[j].getStats();
+                            long cnt = s.getCount();
+                            double cvar2 = s.getCVar2();
+
+                            double w = (cvar2 > 0.0)
+                                    ? cvar2 / (cnt * (cnt + 1.0))
+                                    : 0.0;
+
+                            weights[j] = w;
+                            sumWeights += w;
                         }
 
                         if (sumWeights == 0.0) {
-                            argmax = rnd.nextInt() * (d - 1);
+                            argmax = rnd.nextInt(d - 1);
                         } else {
-                            double rrand = rnd.nextDouble() * sumWeights;
+                            double rrand = rnd.nextDouble(sumWeights);
                             double cumulative = 0.0;
+
                             for (j = 0; j < d - 1; j++) {
                                 cumulative += weights[j];
                                 if (rrand <= cumulative) {
@@ -290,8 +315,94 @@ public class Main {
                     }
 
                     nBallIntegrator[argmax].update();
+                    globalUpdateID++;
+                    counts[argmax]++;
+
+                    Stats localStats = nBallIntegrator[argmax].getStats();
+                    double estCVar2 = localStats.getCVar2();
+                    double exactCVar2 = getCVar2(argmax + 1);
+
+                    /* sumy cez všetky dimenzie */
+                    double estSum = 0.0;
+                    double exactSum = 0.0;
+                    double totalUpdates = 0.0;
+
+                    for (int t = 0; t < d - 1; t++) {
+                        double est = nBallIntegrator[t].getStats().getCVar2();
+                        double ex = getCVar2(t + 1);
+
+                        estSum += Math.sqrt(Math.max(est, 0.0));
+                        exactSum += Math.sqrt(Math.max(ex, 0.0));
+                        totalUpdates += dsel_stats[t].getCount();
+                    }
+
+
+                    /* estimated fraction */
+                    double estFraction = (estSum > 0.0)
+                            ? Math.sqrt(Math.max(estCVar2, 0.0)) / estSum
+                            : 0.0;
+
+                    /* exact fraction */
+                    double exactFraction = (exactSum > 0.0)
+                            ? Math.sqrt(Math.max(exactCVar2, 0.0)) / exactSum
+                            : 0.0;
+
+                        double localLast = localStats.getLast();
+                        double localMean = localStats.getAvg();
+                        double localVar = localStats.getVar();
+                        double localStd = Math.sqrt(localVar);
+                        double localCvar2 = localStats.getCVar2();
+
+                        long localCount = localStats.getCount();
+
+                        double volume = 1.0;
+
+                        for (int t = 0; t < d - 1; t++) {
+
+                            volume *= nBallIntegrator[t].getStats().getAvg();
+                        }
+
+                        double globalEstimate = 2.0 * volume;
+
+                        nball_stats2.update(globalEstimate);
+
+                        double productMean = nball_stats2.getAvg();
+                        double productVar = nball_stats2.getVar();
+                        double productCvar2 = nball_stats2.getCVar2();
+
+                        /* write log row */
+                        logOut.println(
+                                globalUpdateID + "\t" +
+                                        k + "\t" +
+                                        //                                    d + "\t" +
+                                        argmax + "\t" +
+                                        localCount + "\t" +
+                                        counts[argmax] + "\t" +
+                                        //                                    globalUpdateID + "\t" +
+
+                                        //                                    localCount + "\t" +
+                                        localLast + "\t" +
+                                        localMean + "\t" +
+                                        localStd + "\t" +
+                                        localVar + "\t" +
+                                        localCvar2 + "\t" +
+                                        exactCVar2 + "\t" +
+
+                                        globalEstimate + "\t" +
+                                        productMean + "\t" +
+                                        productVar + "\t" +
+                                        productCvar2 + "\t" +
+
+                                        estFraction + "\t" +
+                                        exactFraction + "\t"+
+                                        exact + "\t"+
+                                        seed
+                        );
+
+
                     dsel_stats[argmax].update(1.0);
                 }
+
 
                 double volume = 1.0;
                 for (l = 0; l < d - 1; l++) {
@@ -310,7 +421,9 @@ public class Main {
                 );
             }
             randOptOut.close();
+            logOut.close();
         }
+
         if(method.equals("opt")) {
             PrintStream optOut = new PrintStream(("opt_" + d + "_" + n + "_" + repetitions + ".txt"));
             optOut.println("Repetition\tExactVolume\tEstimate\tMeanEstimate\tVariance\tCVar2\tSEED=" + seed);
@@ -347,7 +460,7 @@ public class Main {
             optOut.close();
         }
 
-        if (method.equals("dsel")) {
+        if (method.equals("dsel") || method.equals("all")) {
             PrintStream dselOut = new PrintStream(("dsel_" + d + "_" + n + "_" + repetitions + ".txt"));
             dselOut.println("Dimension\tEstimatedCVar2\tExactCVar2\tActualUpdateShare\tEstimatedFraction\tExactFraction\tSampleCount\tSEED=" + seed);
             double cvar2sum = 0.0;
@@ -372,7 +485,7 @@ public class Main {
                 dselOut.println(i + 1 + "\t" +
                         estCvar2 + "\t" +
                         exactCvar2 + "\t" +
-                        (double) dsel_stats[i].getCount() / (d * n) + "\t" +
+                        (double) dsel_stats[i].getCount() / (d * n)/100 + "\t" +
                         d * n * Math.sqrt(Math.max(estCvar2, 0.0)) / cvar2sum / sum + "\t" +
                         Math.sqrt(Math.max(exactCvar2, 0.0)) / exact_cvarsum + "\t" +
                         dsel_stats[i].getCount());
@@ -380,7 +493,7 @@ public class Main {
             dselOut.close();
         }
 
-        if(method.equals("uni")) {
+        if(method.equals("uni") || method.equals("all")) {
             PrintStream uniOut = new PrintStream(("uni_" + d + "_" + n + "_" + repetitions + ".txt"));
             uniOut.println("Repetition\tExactVolume\tEstimate\tMeanEstimate\tVariance\tCVar2\tSEED=" + seed);
             nball_stats = new Stats();

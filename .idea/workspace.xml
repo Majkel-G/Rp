@@ -4,11 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="485859a8-5e32-48f7-9086-e6a925935cf8" name="Changes" comment="" />
+    <list default="true" id="485859a8-5e32-48f7-9086-e6a925935cf8" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mc/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/mc/Main.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="30" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -17,8 +23,27 @@
       </list>
     </option>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Majkel-G&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Majkel-G/Rp.git&quot;,
+    &quot;accountId&quot;: &quot;63f566e0-bc55-45d9-8515-3a2287285705&quot;
+  }
+}</component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$USER_HOME$/AppData/Local/Temp/b952630a-7a73-4730-81e5-a60e68909722_MC20251104 (1).zip.MC20251104 (1).zip/src/mc/Main.java" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 8
@@ -32,9 +57,15 @@
   &quot;keyToString&quot;: {
     &quot;Application.Main.executor&quot;: &quot;Run&quot;,
     &quot;Application.Unnamed.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;logs&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/micha/Downloads/MC20251104/lib/commons-numbers-gamma-1.2.jar&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/micha/Desktop/mc_git/Rp&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -57,9 +88,11 @@
   </component>
   <component name="RunManager">
     <configuration name="Main" type="Application" factoryName="Application" nameIsGenerated="true">
+      <option name="ALTERNATIVE_JRE_PATH" value="23" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
       <option name="MAIN_CLASS_NAME" value="mc.Main" />
-      <module name="mc" />
-      <option name="PROGRAM_PARAMETERS" value="9 1000 100" />
+      <module name="Rp" />
+      <option name="PROGRAM_PARAMETERS" value="rOpt 9 1000 1000 9875" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -68,8 +101,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-a94e463ab2e7-intellij.indexing.shared.core-IU-243.26053.27" />
-        <option value="bundled-js-predefined-d6986cc7102b-1632447f56bf-JavaScript-IU-243.26053.27" />
+        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.31033.145" />
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-IU-253.31033.145" />
       </set>
     </attachedChunks>
   </component>
@@ -100,6 +133,18 @@
       <workItem from="1764575548498" duration="2843000" />
       <workItem from="1764590039845" duration="35000" />
       <workItem from="1764608762826" duration="737000" />
+      <workItem from="1773172468192" duration="5303000" />
+      <workItem from="1773241762826" duration="4450000" />
+      <workItem from="1773266189650" duration="2710000" />
+      <workItem from="1773274925033" duration="191000" />
+      <workItem from="1773361834868" duration="73000" />
+      <workItem from="1773516405284" duration="5291000" />
+      <workItem from="1773675487386" duration="1522000" />
+      <workItem from="1773751051816" duration="4233000" />
+      <workItem from="1773755598600" duration="4237000" />
+      <workItem from="1773964517330" duration="67000" />
+      <workItem from="1774097836487" duration="103000" />
+      <workItem from="1774573513664" duration="548000" />
     </task>
     <servers />
   </component>
