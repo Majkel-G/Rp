@@ -249,7 +249,7 @@ public class Main {
                     "UpdateID\tRepetition\tSelectedDimension\tDimensionUpdateCount\tGlobalDimensionUpdateCount\t" +
                             "LocalLastValue\tLocalMean\tLocalStdDev\tLocalVariance\tLocalCVar2\tExactCVar2\t" +
                             "GlobalVolumeEstimate\tProductMeanEstimate\tProductVariance\tProductCVar2\t" +
-                            "EstimatedFraction\tExactFraction\t" +
+                            "EstimatedFraction\tExactInDim\t" +
                             "ExactVolume\tSeed"
             );
             long globalUpdateID = 0;
@@ -275,7 +275,7 @@ public class Main {
                     argmax = 0;
                     for (j = 0; j < d - 1; j++) {
                         Stats s = nBallIntegrator[j].getStats();
-                        if (s.getCount() < 2) {
+                        if (s.getCount() < 2 ) {
                             argmax = j;
                             warmup = true;
                             break;
@@ -291,7 +291,7 @@ public class Main {
                             double cvar2 = s.getCVar2();
 
                             double w = (cvar2 > 0.0)
-                                    ? cvar2 / (cnt * (cnt + 1.0))
+                                    ? (cvar2 ) / (cnt * (cnt + 1.0))
                                     : 0.0;
 
                             weights[j] = w;
@@ -320,8 +320,8 @@ public class Main {
 
                     Stats localStats = nBallIntegrator[argmax].getStats();
                     double estCVar2 = localStats.getCVar2();
-                    double exactCVar2 = getCVar2(argmax + 1);
-
+                    double exactCVar2 = getCVar2(argmax +1);
+                    double exactDim= new Sphere(argmax, r).getVolume();
                     /* sumy cez všetky dimenzie */
                     double estSum = 0.0;
                     double exactSum = 0.0;
@@ -394,7 +394,7 @@ public class Main {
                                         productCvar2 + "\t" +
 
                                         estFraction + "\t" +
-                                        exactFraction + "\t"+
+                                        exactDim + "\t"+
                                         exact + "\t"+
                                         seed
                         );
@@ -402,6 +402,10 @@ public class Main {
 
                     dsel_stats[argmax].update(1.0);
                 }
+                System.out.println("Repetition: "+k);
+                    for(int t=0; t<d-1; t++) {
+                        System.out.println("Dim " + t + " samples: " + nBallIntegrator[t].getStats().getCount());
+                    }
 
 
                 double volume = 1.0;

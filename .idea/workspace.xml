@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="485859a8-5e32-48f7-9086-e6a925935cf8" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/Rp/mc/Main.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/Rp/mc/Main.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/mc/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/mc/Main.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -14,7 +15,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="30" />
+    <option name="cachedIndexableFilesCount" value="88" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -60,6 +61,7 @@
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;logs&quot;,
@@ -92,7 +94,7 @@
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
       <option name="MAIN_CLASS_NAME" value="mc.Main" />
       <module name="Rp" />
-      <option name="PROGRAM_PARAMETERS" value="rOpt 9 1000 1000 9875" />
+      <option name="PROGRAM_PARAMETERS" value="rOpt 9 1000 10 985" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -144,7 +146,27 @@
       <workItem from="1773755598600" duration="4237000" />
       <workItem from="1773964517330" duration="67000" />
       <workItem from="1774097836487" duration="103000" />
-      <workItem from="1774573513664" duration="548000" />
+      <workItem from="1774573513664" duration="934000" />
+      <workItem from="1774791196108" duration="33000" />
+      <workItem from="1775031214814" duration="2649000" />
+      <workItem from="1775043093970" duration="363000" />
+      <workItem from="1775595263876" duration="4235000" />
+      <workItem from="1775662411493" duration="3964000" />
+      <workItem from="1775764045042" duration="506000" />
+      <workItem from="1776165045201" duration="1552000" />
+      <workItem from="1776252628720" duration="8239000" />
+      <workItem from="1776603261591" duration="11052000" />
+      <workItem from="1776633218956" duration="5549000" />
+      <workItem from="1776715199256" duration="281000" />
+      <workItem from="1776719868751" duration="408000" />
+      <workItem from="1776764642579" duration="3247000" />
+      <workItem from="1776775605616" duration="198000" />
+      <workItem from="1776776085068" duration="6302000" />
+      <workItem from="1776885358461" duration="111000" />
+      <workItem from="1777552301716" duration="3823000" />
+      <workItem from="1777932503272" duration="1632000" />
+      <workItem from="1777986187591" duration="661000" />
+      <workItem from="1777997715373" duration="545000" />
     </task>
     <servers />
   </component>
